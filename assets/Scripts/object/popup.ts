@@ -1,5 +1,5 @@
 
-import { _decorator, Component, Node, v3, RichText, Label } from 'cc';
+import { _decorator, Component, Node, v3, RichText, Label, tween } from 'cc';
 const { ccclass, property } = _decorator;
 
 /**
@@ -43,7 +43,10 @@ export class popup extends Component {
         this.mainButton.off(Node.EventType.TOUCH_END)
         this.secondButton.off(Node.EventType.TOUCH_END)
         this.node.active = true;
-        this.node.setScale(v3(1, 1, 1));
+        tween(this.node).to(0.2, {
+            scale: v3(1, 1, 1)
+        }).start();
+        // this.node.setScale(v3(1, 1, 1));
         this.label.string = `<color=#000000>${text}</color>`;
         this.subText.string = `<color=#000000>${subtext}</color>`;
         this.mainButton.getChildByName('Label').getComponent(Label).string = button1;
