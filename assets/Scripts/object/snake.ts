@@ -1,5 +1,5 @@
 
-import { _decorator, Component, Node, Scheduler, v3, tween, instantiate, Color, sys, director } from 'cc';
+import { _decorator, Component, Node, Scheduler, v3, tween, instantiate, Color, sys, director, Vec3 } from 'cc';
 import { crashSfx } from '../audio/crashSfx';
 import { eatSfx } from '../audio/eatSfx';
 import { turnSfx } from '../audio/turnSfx';
@@ -103,13 +103,6 @@ export class snake extends Component {
     }
 
     private moveSnake() {
-        // this.gameControl.node.once(MOVE_EVENT.MOVE, (key) => {
-        //     if (!this.isMoving) {
-        //         this.startMoving();
-        //         this.isMoving = true;
-        //     } 
-        //     this.changeSnakeDirection(key);
-        // }, this);
         let positionBefore: {x: number, y: number};
         let directionBefore: {x: number, y: number};
         let currentPosition;
@@ -156,6 +149,7 @@ export class snake extends Component {
         const node = instantiate(this.snakeSprite?.node);
         node.setParent(this.gameBoard.node);
         node.setPosition(tail.getNode().getPosition().x, tail.getNode().getPosition().y);
+        node.setRotationFromEuler(tail.getNode().eulerAngles);
         node.active = true;
         node.getComponent(SnakeSprite)?.updateTexture(SNAKE_FRAME.TAIL);
         this.addSnake(node, tail.getDirection(), {x: tail.getPosition().x + 1, y:tail.getPosition().y});
@@ -185,8 +179,8 @@ export class snake extends Component {
                     direction: {x: number, y: number}, isHead?: boolean) {
         if (isHead && this.gameBoard) {
             if (!this.gameBoard?.isTileFree(destination.x, destination.y)) {
-                tween(part.getNode()).to(0.1, {
-                    eulerAngles: this.directionToEuler(direction)
+                tween(part.getNode()).by(this.currentSpeed * 0.9, {
+                    eulerAngles: this.calculateRotation(part.getNode().eulerAngles, this.directionToEuler(direction))
                 }).start();
                 this.runGameover();
                 // console.log(this.gameBoard?.isTileFree(destination.x, destination.y));
@@ -203,10 +197,26 @@ export class snake extends Component {
         }
         tween(part.getNode()).to(this.currentSpeed, {
             position: v3(destination.x * 21, destination.y * -21),
-            eulerAngles: this.directionToEuler(direction)
+        }).start();
+        tween(part.getNode()).by(this.currentSpeed * 0.9, {
+            eulerAngles: this.calculateRotation(part.getNode().eulerAngles, this.directionToEuler(direction))
+        }, {
+            onComplete: () => {
+                part.getNode().setRotationFromEuler(this.directionToEuler(direction))
+            }
         }).start();
         part.setPosition(destination.x, destination.y);
         part.setDirection(direction.x, direction.y);
+    }
+
+    private calculateRotation(from: Vec3, to: Vec3) {
+        console.log(from);
+        console.log(to);
+        let rotation = to.z - from.z;
+        if (rotation >= 270) rotation = rotation - 360
+        else if (rotation <= -270) rotation = 360 + rotation;
+        console.log(rotation);
+        return (v3(0, 0, rotation))
     }
 
     private runGameover() {
